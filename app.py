@@ -22,7 +22,6 @@ moment = Moment(app)
 app.config.from_object('config')
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://jordanhuus@localhost:5432/fyyur'
 db = SQLAlchemy(app)
-
 migrate = Migrate(app, db)
 
 
@@ -101,7 +100,17 @@ class Artist(db.Model):
         start_time          -> String
     '''
 
-# TODO Implement Show and Artist models, and complete all model relationships and properties, as a database migration.
+
+class Show(db.Model):
+    __tablename__ = 'Show'
+
+    id = db.Column(db.Integer, primary_key=True)
+    venue_id = db.Column(db.Integer, nullable=False)
+    venue_name = db.Column(db.String(), nullable=False)
+    artist_id = db.Column(db.Integer, nullable=False)
+    artist_name = db.Column(db.String(), nullable=False)
+    artist_image_link = db.Column(db.String(), nullable=False)
+    start_time = db.Column(db.String(), nullable=False)
 
 #----------------------------------------------------------------------------#
 # Filters.
