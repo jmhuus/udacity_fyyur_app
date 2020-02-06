@@ -55,6 +55,29 @@ class Artist(db.Model):
     genres = db.Column(db.String(120))
     image_link = db.Column(db.String(500))
     facebook_link = db.Column(db.String(120))
+    seeking_venue = db.Column(db.Boolean)
+    seeking_description = db.Column(db.String())
+    image_link = db.Column(db.String())
+
+    '''
+    past shows count will be queried when the page is requested
+        count               -> Integer
+
+    upcoming shows count will be queried when the page is requested
+        count               -> Integer
+
+    past shows data will be queried when the page is requested
+        venue_id            -> Integer
+        venue_name          -> String
+        venue_image_link    -> String
+        start_time          -> String
+
+    upcoming shows will be queried when the page is requested
+        venue_id            -> Integer
+        venue_name          -> String
+        venue_image_link    -> String
+        start_time          -> String
+    '''
 
     # TODO: implement any missing fields, as a database migration using Flask-Migrate
 
