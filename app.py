@@ -12,6 +12,7 @@ import logging
 from logging import Formatter, FileHandler
 from flask_wtf import Form
 from forms import *
+from flask_migrate import Migrate
 #----------------------------------------------------------------------------#
 # App Config.
 #----------------------------------------------------------------------------#
@@ -21,6 +22,8 @@ moment = Moment(app)
 app.config.from_object('config')
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://jordanhuus@localhost:5432/fyyur'
 db = SQLAlchemy(app)
+
+migrate = Migrate(app, db)
 
 
 #----------------------------------------------------------------------------#
