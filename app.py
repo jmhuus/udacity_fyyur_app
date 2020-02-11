@@ -5,7 +5,7 @@
 import json
 import dateutil.parser
 import babel
-from flask import Flask, render_template, request, Response, flash, redirect, url_for
+from flask import Flask, render_template, request, Response, flash, redirect, url_for, jsonify
 from flask_moment import Moment
 from flask_sqlalchemy import SQLAlchemy
 import logging
@@ -13,6 +13,7 @@ from logging import Formatter, FileHandler
 from flask_wtf import Form
 from forms import *
 from flask_migrate import Migrate
+import sys
 #----------------------------------------------------------------------------#
 # App Config.
 #----------------------------------------------------------------------------#
@@ -42,7 +43,7 @@ class Venue(db.Model):
     facebook_link = db.Column(db.String(120))
     seeking_talent = db.Column(db.Boolean)
     seeking_description = db.Column(db.String(120))
-    image_link = db.Column(db.String(120))
+    shows = db.relationship('Show', backref='shows', lazy=False)
 
     '''
     past shows count will be queried when the page is requested
@@ -78,7 +79,7 @@ class Artist(db.Model):
     facebook_link = db.Column(db.String(120))
     seeking_venue = db.Column(db.Boolean)
     seeking_description = db.Column(db.String())
-    image_link = db.Column(db.String())
+    shows = db.relationship('Show', backref='shows', lazy=False)
 
     '''
     past shows count will be queried when the page is requested
@@ -105,11 +106,8 @@ class Show(db.Model):
     __tablename__ = 'Show'
 
     id = db.Column(db.Integer, primary_key=True)
-    venue_id = db.Column(db.Integer, nullable=False)
-    venue_name = db.Column(db.String(), nullable=False)
-    artist_id = db.Column(db.Integer, nullable=False)
-    artist_name = db.Column(db.String(), nullable=False)
-    artist_image_link = db.Column(db.String(), nullable=False)
+    venue_id = db.Column(db.Integer, db.ForeignKey('Venue.id'), nullable=False)
+    artist_id = db.Column(db.Integer, db.ForeignKey('Artist.id'), nullable=False)
     start_time = db.Column(db.String(), nullable=False)
 
 #----------------------------------------------------------------------------#
@@ -275,6 +273,7 @@ def create_venue_form():
 @app.route('/venues/create', methods=['POST'])
 def create_venue_submission():
   # TODO: insert form data as a new Venue record in the db, instead
+
   # TODO: modify data to be the data object returned from db insertion
 
   # on successful db insert, flash success
@@ -483,46 +482,24 @@ def create_artist_submission():
 
 @app.route('/shows')
 def shows():
-  # displays list of shows at /shows
-  # TODO: replace with real venues data.
-  #       num_shows should be aggregated based on number of upcoming shows per venue.
-  data=[{
-    "venue_id": 1,
-    "venue_name": "The Musical Hop",
-    "artist_id": 4,
-    "artist_name": "Guns N Petals",
-    "artist_image_link": "https://images.unsplash.com/photo-1549213783-8284d0336c4f?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=300&q=80",
-    "start_time": "2019-05-21T21:30:00.000Z"
-  }, {
-    "venue_id": 3,
-    "venue_name": "Park Square Live Music & Coffee",
-    "artist_id": 5,
-    "artist_name": "Matt Quevedo",
-    "artist_image_link": "https://images.unsplash.com/photo-1495223153807-b916f75de8c5?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=334&q=80",
-    "start_time": "2019-06-15T23:00:00.000Z"
-  }, {
-    "venue_id": 3,
-    "venue_name": "Park Square Live Music & Coffee",
-    "artist_id": 6,
-    "artist_name": "The Wild Sax Band",
-    "artist_image_link": "https://images.unsplash.com/photo-1558369981-f9ca78462e61?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=794&q=80",
-    "start_time": "2035-04-01T20:00:00.000Z"
-  }, {
-    "venue_id": 3,
-    "venue_name": "Park Square Live Music & Coffee",
-    "artist_id": 6,
-    "artist_name": "The Wild Sax Band",
-    "artist_image_link": "https://images.unsplash.com/photo-1558369981-f9ca78462e61?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=794&q=80",
-    "start_time": "2035-04-08T20:00:00.000Z"
-  }, {
-    "venue_id": 3,
-    "venue_name": "Park Square Live Music & Coffee",
-    "artist_id": 6,
-    "artist_name": "The Wild Sax Band",
-    "artist_image_link": "https://images.unsplash.com/photo-1558369981-f9ca78462e61?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=794&q=80",
-    "start_time": "2035-04-15T20:00:00.000Z"
-  }]
-  return render_template('pages/shows.html', shows=data)
+
+    # shows_result = []
+    query_result = Show.query.all()
+    print(query_result)
+    # for query in query_result:
+    #     print(query)
+    #     shows_result += query
+
+    # query and return the following fields
+    # as an array of dictionaries.
+    #   - venue_id
+    #   - venue_name
+    #   - artist_id
+    #   - artist_name
+
+
+    # return render_template('pages/shows.html', shows=shows)
+    return render_template('pages/new_show.html', shows=shows)
 
 @app.route('/shows/create')
 def create_shows():
@@ -532,15 +509,32 @@ def create_shows():
 
 @app.route('/shows/create', methods=['POST'])
 def create_show_submission():
-  # called to create new shows in the db, upon submitting new show listing form
-  # TODO: insert form data as a new Show record in the db, instead
+    # called to create new shows in the db, upon submitting new show listing form
+    # Form input
+    artist_id = request.form.get('artist_id')
+    venue_id = request.form.get('venue_id')
+    start_time = request.form.get('start_time')
 
-  # on successful db insert, flash success
-  flash('Show was successfully listed!')
-  # TODO: on unsuccessful db insert, flash an error instead.
-  # e.g., flash('An error occurred. Show could not be listed.')
-  # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
-  return render_template('pages/home.html')
+    # Add data to database
+    new_show = Show(artist_id=artist_id, venue_id=venue_id, start_time=start_time)
+    error = False
+    try:
+        db.session.add(new_show)
+        db.session.commit()
+        flash('Show was successfully listed!')
+    except:
+        db.session.rollback()
+        error = True
+        print(sys.exc_info())
+        flash('Uh oh! There was an error adding your show. Refresh and try again.')
+    finally:
+        db.session.close()
+
+    # Return
+    if error:
+        abort(500)
+    else:
+        return render_template('pages/home.html')
 
 @app.errorhandler(404)
 def not_found_error(error):
