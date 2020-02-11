@@ -43,7 +43,7 @@ class Venue(db.Model):
     facebook_link = db.Column(db.String(120))
     seeking_talent = db.Column(db.Boolean)
     seeking_description = db.Column(db.String(120))
-    shows = db.relationship('Show', backref='shows', lazy=False)
+    shows = db.relationship('Show', backref='venue_shows', lazy=False)
 
     '''
     past shows count will be queried when the page is requested
@@ -79,7 +79,7 @@ class Artist(db.Model):
     facebook_link = db.Column(db.String(120))
     seeking_venue = db.Column(db.Boolean)
     seeking_description = db.Column(db.String())
-    shows = db.relationship('Show', backref='shows', lazy=False)
+    shows = db.relationship('Show', backref='artist_shows', lazy=False)
 
     '''
     past shows count will be queried when the page is requested
@@ -484,8 +484,13 @@ def create_artist_submission():
 def shows():
 
     # shows_result = []
-    query_result = Show.query.all()
-    print(query_result)
+    shows = Show.query.all()
+    for show in shows:
+        print(show.venue_shows.name)
+        print(show.artist_shows.name)
+        print(show.artist_id)
+        print(show.venue_id)
+        print(show.start_time)
     # for query in query_result:
     #     print(query)
     #     shows_result += query
@@ -499,7 +504,7 @@ def shows():
 
 
     # return render_template('pages/shows.html', shows=shows)
-    return render_template('pages/new_show.html', shows=shows)
+    return render_template('layouts/main.html', shows=shows)
 
 @app.route('/shows/create')
 def create_shows():
