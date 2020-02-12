@@ -5,12 +5,12 @@
 import json
 import dateutil.parser
 import babel
-from flask import Flask, render_template, request, Response, flash, redirect, url_for, jsonify
+from flask import Flask, render_template, request, Response, flash, redirect, url_for, jsonify, abort
 from flask_moment import Moment
 from flask_sqlalchemy import SQLAlchemy
 import logging
 from logging import Formatter, FileHandler
-from flask_wtf import Form
+from flask_wtf import FlaskForm
 from forms import *
 from flask_migrate import Migrate
 import sys
@@ -40,6 +40,7 @@ class Venue(db.Model):
     address = db.Column(db.String(120))
     phone = db.Column(db.String(120))
     image_link = db.Column(db.String(500))
+    genres = db.Column(db.ARRAY(db.String))
     facebook_link = db.Column(db.String(120))
     seeking_talent = db.Column(db.Boolean)
     seeking_description = db.Column(db.String(120))
@@ -272,16 +273,46 @@ def create_venue_form():
 
 @app.route('/venues/create', methods=['POST'])
 def create_venue_submission():
-  # TODO: insert form data as a new Venue record in the db, instead
+    name = request.form.get('name')
+    city = request.form.get('city')
+    state = request.form.get('state')
+    address = request.form.get('address')
+    phone = request.form.get('phone')
+    # TODO(jordanhuus): Add UI support for venue image link
+    image_link = 'https://images.unsplash.com/photo-1549044940-cbc22f936f6f?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=2608&q=80'
+    genres = request.form.getlist('genres')
+    facebook_link = request.form.get('facebook_link')
+    new_venue = Venue(name=name,
+                    city=city,
+                    state=state,
+                    address=address,
+                    phone=phone,
+                    image_link=image_link,
+                    facebook_link=facebook_link,
+                    seeking_talent=True,
+                    seeking_description='Seeking awesome talent.',
+                    genres=genres)
 
-  # TODO: modify data to be the data object returned from db insertion
+    # TODO: modify data to be the data object returned from db insertion
+    error = False
+    try:
+        db.session.add(new_venue)
+        db.session.commit()
+        flash(f'Venue {request.form["name"]} was successfully listed!')
+    except:
+        error = True
+        db.session.rollback()
+        print(sys.exc_info())
+    finally:
+        db.session.close()
 
-  # on successful db insert, flash success
-  flash('Venue ' + request.form['name'] + ' was successfully listed!')
-  # TODO: on unsuccessful db insert, flash an error instead.
-  # e.g., flash('An error occurred. Venue ' + data.name + ' could not be listed.')
-  # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
-  return render_template('pages/home.html')
+    if error:
+        flash(f'Venue {request.form["name"]} failed to be listed. Please Refresh and try again.')
+        abort(500)
+    else:
+        return render_template('pages/home.html')
+
+
 
 @app.route('/venues/<venue_id>', methods=['DELETE'])
 def delete_venue(venue_id):
@@ -497,6 +528,7 @@ def create_show_submission():
     artist_id = request.form.get('artist_id')
     venue_id = request.form.get('venue_id')
     start_time = request.form.get('start_time')
+
 
     # Add data to database
     new_show = Show(artist_id=artist_id, venue_id=venue_id, start_time=start_time)
