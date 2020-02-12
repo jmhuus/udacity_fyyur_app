@@ -506,9 +506,9 @@ def create_artist_submission():
     phone = request.form.get('phone')
     genres = request.form.getlist('genres')
     facebook_link = request.form.get('facebook_link')
-    image_link = 'fjksdlj' # TODO(jordanhuus): implement
-    seeking_venue = True # TODO(jordanhuus): implement
-    seeking_description = 'jfkdsj' # TODO(jordanhuus): implement
+    image_link = 'fjksdlj' #TODO(jordanhuus): implement from edit feature?
+    seeking_venue = True
+    seeking_description = 'jfkdsj' #TODO(jordanhuus): implement from edit feature?
     new_artist = Artist(
         name=name,
         city=city,
