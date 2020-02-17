@@ -129,19 +129,36 @@ def venues():
 
 @app.route('/venues/search', methods=['POST'])
 def search_venues():
-    # TODO: implement search on artists with partial string search. Ensure it is case-insensitive.
-    # seach for Hop should return "The Musical Hop".
-    # search for "Music" should return "The Musical Hop" and "Park Square Live Music & Coffee"
-    response={
-        "count": 1,
-        "data": [{
-            "id": 2,
-            "name": "The Dueling Pianos Bar",
-            "num_upcoming_shows": 0,
-        }]
-    }
+    # Search term
+    venue_search_term = request.form.get('search_term', '')
 
-    return render_template('pages/search_venues.html', results=response, search_term=request.form.get('search_term', ''))
+    # Search by name (case insensitive)
+    venues_by_name = Venue.query.filter(Venue.name.ilike(f"%{venue_search_term}%")).all()
+
+    # Search by city (case insensitive)
+    venues_by_city = Venue.query.filter(Venue.city.ilike(f"%{venue_search_term}%")).all()
+
+    # Search by state (case insensitive)
+    venues_by_state = Venue.query.filter(Venue.state.ilike(f"%{venue_search_term}%")).all()
+
+    # Response data
+    response = {
+        "count": len(venues_by_name) + len(venues_by_city) + len(venues_by_state),
+        "data" : []
+    }
+    for venue in (venues_by_name + venues_by_city + venues_by_state):
+        response["data"].append({
+            "id": venue.id,
+            "name": venue.name,
+            "num_upcoming_shows": Show.query.filter(Show.venue_id == venue.id, db.cast(Show.start_time, db.Date) >= datetime.datetime.now()).count()
+        })
+
+
+    if response['count'] == 0:
+        flash(f"No results found for {venue_search_term}.")
+        return redirect(url_for('venues'))
+    else:
+        return render_template('pages/search_venues.html', results=response, search_term=venue_search_term)
 
 
 @app.route('/venues/<int:venue_id>')
@@ -198,7 +215,6 @@ def show_venue(venue_id):
 @app.route('/venues/create', methods=['GET'])
 def create_venue_form():
     form = VenueForm()
-
     return render_template('forms/new_venue.html', form=form)
 
 
@@ -303,7 +319,7 @@ def search_artists():
         response["data"].append({
             "id": artist.id,
             "name": artist.name,
-            "num_upcoming_shows": Show.query.filter(Show.artist_id == artist.id, db.cast(Show.start_time, db.Date) >= datetime.datetime.now())
+            "num_upcoming_shows": Show.query.filter(Show.artist_id == artist.id, db.cast(Show.start_time, db.Date) >= datetime.datetime.now()).count()
         })
 
     return render_template('pages/search_artists.html', results=response, search_term=artist_search_term)
@@ -360,58 +376,89 @@ def show_artist(artist_id):
 @app.route('/artists/<int:artist_id>/edit', methods=['GET'])
 def edit_artist(artist_id):
     form = ArtistForm()
-    artist={
-        "id": 4,
-        "name": "Guns N Petals",
-        "genres": ["Rock n Roll"],
-        "city": "San Francisco",
-        "state": "CA",
-        "phone": "326-123-5000",
-        "website": "https://www.gunsnpetalsband.com",
-        "facebook_link": "https://www.facebook.com/GunsNPetals",
-        "seeking_venue": True,
-        "seeking_description": "Looking for shows to perform at in the San Francisco Bay Area!",
-        "image_link": "https://images.unsplash.com/photo-1549213783-8284d0336c4f?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=300&q=80"
-    }
-    # TODO: populate form with fields from artist with ID <artist_id>
-    return render_template('forms/edit_artist.html', form=form, artist=artist)
+    artist = Artist.query.get(artist_id)
+    if artist == None:
+        abort(404)
+    else:
+        return render_template('forms/edit_artist.html', form=form, artist=artist)
+
 
 
 @app.route('/artists/<int:artist_id>/edit', methods=['POST'])
 def edit_artist_submission(artist_id):
-    # TODO: take values from the form submitted, and update existing
-    # artist record with ID <artist_id> using the new attributes
+    # Form data
+    name = request.form.get('name')
+    city = request.form.get('city')
+    state = request.form.get('state')
+    phone = request.form.get('phone')
+    genres = request.form.getlist('genres')
+    facebook_link = request.form.get('facebook_link')
 
-    return redirect(url_for('show_artist', artist_id=artist_id))
+    error = False
+    try:
+        # Update artist
+        artist = Artist.query.get(artist_id)
+        artist.name = name
+        artist.city = city
+        artist.state = state
+        artist.phone = phone
+        artist.genres = genres
+        artist.facebook_link = facebook_link
+
+        db.session.commit()
+    except:
+        error = True
+        db.session.rollback()
+    finally:
+        db.session.close()
+
+    if error:
+        abort(500)
+    else:
+        return redirect(url_for('show_artist', artist_id=artist_id))
+
 
 
 @app.route('/venues/<int:venue_id>/edit', methods=['GET'])
 def edit_venue(venue_id):
     form = VenueForm()
-    venue={
-        "id": 1,
-        "name": "The Musical Hop",
-        "genres": ["Jazz", "Reggae", "Swing", "Classical", "Folk"],
-        "address": "1015 Folsom Street",
-        "city": "San Francisco",
-        "state": "CA",
-        "phone": "123-123-1234",
-        "website": "https://www.themusicalhop.com",
-        "facebook_link": "https://www.facebook.com/TheMusicalHop",
-        "seeking_talent": True,
-        "seeking_description": "We are on the lookout for a local artist to play every two weeks. Please call us.",
-        "image_link": "https://images.unsplash.com/photo-1543900694-133f37abaaa5?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=400&q=60"
-    }
-
-    # TODO: populate form with values from venue with ID <venue_id>
+    venue = Venue.query.get(venue_id)
     return render_template('forms/edit_venue.html', form=form, venue=venue)
 
 @app.route('/venues/<int:venue_id>/edit', methods=['POST'])
 def edit_venue_submission(venue_id):
+    # Form data
+    name = request.form.get('name')
+    city = request.form.get('city')
+    state = request.form.get('state')
+    address = request.form.get('address')
+    phone = request.form.get('phone')
+    genres = request.form.get('genres')
+    facebook_link = request.form.get('facebook_link')
 
-    # TODO: take values from the form submitted, and update existing
-    # venue record with ID <venue_id> using the new attributes
-    return redirect(url_for('show_venue', venue_id=venue_id))
+    error = False
+    try:
+        # Update venue
+        venue = Venue.query.get(venue_id)
+        venue.name = name
+        venue.city = city
+        venue.state = state
+        venue.address = address
+        venue.phone = phone
+        venue.genres = genres
+        venue.facebook_link = facebook_link
+
+        db.session.commit()
+    except:
+        error = True
+        db.session.rollback()
+    finally:
+        db.session.close()
+
+    if error:
+        abort(500)
+    else:
+        return redirect(url_for('show_venue', venue_id=venue_id))
 
 
 #  Create Artist
@@ -419,7 +466,6 @@ def edit_venue_submission(venue_id):
 @app.route('/artists/create', methods=['GET'])
 def create_artist_form():
     form = ArtistForm()
-
     return render_template('forms/new_artist.html', form=form)
 
 
@@ -505,7 +551,6 @@ def create_show_submission():
     finally:
         db.session.close()
 
-    # Return
     if error:
         abort(500)
     else:
