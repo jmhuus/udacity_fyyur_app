@@ -46,7 +46,7 @@ class Venue(db.Model):
     facebook_link = db.Column(db.String(120))
     seeking_talent = db.Column(db.Boolean)
     seeking_description = db.Column(db.String(120))
-    shows = db.relationship('Show', backref='show_venue', lazy=False)
+    shows = db.relationship('Show', backref='show_venue', cascade='all,delete', lazy=False)
 
 
 class Artist(db.Model):
@@ -148,6 +148,8 @@ def search_venues():
 def show_venue(venue_id):
     # Gather artist data
     venue = Venue.query.get(venue_id)
+    if venue == None:
+        abort(404)
     venue_data = {
         "id": venue.id,
         "name": venue.name,
@@ -224,7 +226,6 @@ def create_venue_submission():
         genres=genres
     )
 
-    # TODO: modify data to be the data object returned from db insertion
     error = False
     try:
         db.session.add(new_venue)
@@ -244,14 +245,39 @@ def create_venue_submission():
         return render_template('pages/home.html')
 
 
-@app.route('/venues/<venue_id>', methods=['DELETE'])
+@app.route('/venues/delete/<venue_id>', methods=['POST'])
 def delete_venue(venue_id):
-    # TODO: Complete this endpoint for taking a venue_id, and using
+    # TODO: Complete this endpoint by taking a venue_id, and using
     # SQLAlchemy ORM to delete a record. Handle cases where the session commit could fail.
+    error = False
+    venue = None
+    venue_name = ""
+    try:
+        venue = Venue.query.get(venue_id)
+        venue_name = venue.name
+        db.session.delete(venue)
+        db.session.commit()
+        flash(f'Venue {venue_name} was successfully removed.')
+        print(f'Venue {venue_name} was successfully removed.')
+    except:
+        error = True
+        db.session.rollback()
+        print(f"There was an error deleting venue with ID={venue_id}.")
+        print(sys.exc_info())
+    finally:
+        db.session.close()
+
+    if error:
+        abort(500)
+    else:
+        return redirect(url_for('index'))
+
+
+
 
     # BONUS CHALLENGE: Implement a button to delete a Venue on a Venue Page, have it so that
     # clicking that button delete it from the db then redirect the user to the homepage
-    return None
+    # return None
 
 
 #  Artists
