@@ -247,8 +247,6 @@ def create_venue_submission():
 
 @app.route('/venues/delete/<venue_id>', methods=['POST'])
 def delete_venue(venue_id):
-    # TODO: Complete this endpoint by taking a venue_id, and using
-    # SQLAlchemy ORM to delete a record. Handle cases where the session commit could fail.
     error = False
     venue = None
     venue_name = ""
@@ -273,13 +271,6 @@ def delete_venue(venue_id):
         return redirect(url_for('index'))
 
 
-
-
-    # BONUS CHALLENGE: Implement a button to delete a Venue on a Venue Page, have it so that
-    # clicking that button delete it from the db then redirect the user to the homepage
-    # return None
-
-
 #  Artists
 #  ----------------------------------------------------------------
 @app.route('/artists')
@@ -288,8 +279,8 @@ def artists():
     data = []
     for artist in Artist.query.all():
         data.append({
-        "id": artist.id,
-        "name": artist.name
+            "id": artist.id,
+            "name": artist.name
         })
 
     return render_template('pages/artists.html', artists=data)
@@ -297,19 +288,25 @@ def artists():
 
 @app.route('/artists/search', methods=['POST'])
 def search_artists():
-    # TODO: implement search on artists with partial string search. Ensure it is case-insensitive.
-    # seach for "A" should return "Guns N Petals", "Matt Quevado", and "The Wild Sax Band".
-    # search for "band" should return "The Wild Sax Band".
-    response={
-        "count": 1,
-        "data": [{
-            "id": 4,
-            "name": "Guns N Petals",
-            "num_upcoming_shows": 0,
-        }]
-    }
+    # Form artist search term
+    artist_search_term = request.form.get('search_term', '')
 
-    return render_template('pages/search_artists.html', results=response, search_term=request.form.get('search_term', ''))
+    # Query artist objects that contain (case insensitive) the specified search term
+    artists = Artist.query.filter(Artist.name.ilike(f"%{artist_search_term}%")).all()
+
+    # Response data
+    response = {
+        "count": len(artists),
+        "data" : []
+    }
+    for artist in artists:
+        response["data"].append({
+            "id": artist.id,
+            "name": artist.name,
+            "num_upcoming_shows": Show.query.filter(Show.artist_id == artist.id, db.cast(Show.start_time, db.Date) >= datetime.datetime.now())
+        })
+
+    return render_template('pages/search_artists.html', results=response, search_term=artist_search_term)
 
 @app.route('/artists/<int:artist_id>')
 def show_artist(artist_id):
