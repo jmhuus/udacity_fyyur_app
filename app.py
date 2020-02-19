@@ -527,7 +527,18 @@ def create_artist_submission():
 #  ----------------------------------------------------------------
 @app.route('/shows')
 def shows():
-    return render_template('pages/shows.html', shows=Show.query.all())
+    shows = []
+    for show in Show.query.all():
+        shows.append({
+            'artist_id': show.artist_id,
+            'artist_name': Artist.query.get(show.artist_id).name,
+            'artist_image_link': Artist.query.get(show.artist_id).image_link,
+            'venue_id': show.venue_id,
+            'venue_name': Venue.query.get(show.venue_id).name,
+            'start_time': show.start_time
+        })
+
+    return render_template('pages/shows.html', shows=shows)
 
 
 @app.route('/shows/create')
