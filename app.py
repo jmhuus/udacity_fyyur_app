@@ -43,6 +43,7 @@ class Venue(db.Model):
     phone = db.Column(db.String(120))
     image_link = db.Column(db.String(500))
     genres = db.Column(db.ARRAY(db.String))
+    website = db.Column(db.String(120))
     facebook_link = db.Column(db.String(120))
     seeking_talent = db.Column(db.Boolean)
     seeking_description = db.Column(db.String(120))
@@ -175,7 +176,7 @@ def show_venue(venue_id):
         "city": venue.city,
         "state": venue.state,
         "phone": venue.phone,
-        "website": "www.google.com", # TODO(jordanhuus): change to dynamic
+        "website": venue.website,
         "facebook_link": venue.facebook_link,
         "seeking_talent": venue.seeking_talent,
         "seeking_description": venue.seeking_description,
@@ -236,6 +237,7 @@ def create_venue_submission():
     # TODO(jordanhuus): Add UI support for venue image link
     image_link = 'https://images.unsplash.com/photo-1549044940-cbc22f936f6f?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=2608&q=80'
     genres = request.form.getlist('genres')
+    website = request.form.get('website')
     facebook_link = request.form.get('facebook_link')
     new_venue = Venue(
         name=name,
@@ -244,6 +246,7 @@ def create_venue_submission():
         address=address,
         phone=phone,
         image_link=image_link,
+        website=website,
         facebook_link=facebook_link,
         seeking_talent=True,
         seeking_description='Seeking awesome talent.',
