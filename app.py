@@ -234,8 +234,7 @@ def create_venue_submission():
     state = request.form.get('state')
     address = request.form.get('address')
     phone = request.form.get('phone')
-    # TODO(jordanhuus): Add UI support for venue image link
-    image_link = 'https://images.unsplash.com/photo-1549044940-cbc22f936f6f?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=2608&q=80'
+    image_link = request.form.get('image_link')
     genres = request.form.getlist('genres')
     website = request.form.get('website')
     facebook_link = request.form.get('facebook_link')
