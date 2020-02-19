@@ -471,9 +471,7 @@ def create_artist_form():
 
 @app.route('/artists/create', methods=['POST'])
 def create_artist_submission():
-    # called upon submitting the new artist listing form
-    # TODO: insert form data as a new Venue record in the db, instead
-    # TODO: modify data to be the data object returned from db insertion
+    # Form data
     name = request.form.get('name')
     city = request.form.get('city')
     state = request.form.get('state')
@@ -523,10 +521,15 @@ def shows():
 
 @app.route('/shows/create')
 def create_shows():
-    # renders form. do not touch.
     form = ShowForm()
 
-    return render_template('forms/new_show.html', form=form)
+    # Artist data
+    artists = Artist.query.all()
+
+    # Venue data
+    venues = Venue.query.all()
+
+    return render_template('forms/new_show.html', form=form, artists=artists, venues=venues)
 
 
 @app.route('/shows/create', methods=['POST'])
@@ -534,7 +537,7 @@ def create_show_submission():
     # Retrieve form data
     artist_id = request.form.get('artist_id')
     venue_id = request.form.get('venue_id')
-    start_time = request.form.get('start_time') #TODO(jordanhuus): needs to be in correct format; incoming string data is causing an error
+    start_time = request.form.get('start_time')
 
     # Add data to database
     new_show = Show(artist_id=artist_id, venue_id=venue_id, start_time=start_time)
