@@ -186,6 +186,14 @@ def show_venue(venue_id):
     past_shows = []
     upcoming_shows = []
     for show in Show.query.filter_by(venue_id=venue_id):
+
+        print()
+        print()
+        print(show.id)
+        print(show.start_time)
+        print()
+        print()
+
         # Past vs upcoming shows
         if datetime.datetime.strptime(show.start_time, '%Y-%m-%dT%H:%M:%S.%fZ') < datetime.datetime.now():
             past_shows.append({
@@ -537,7 +545,7 @@ def create_show_submission():
     # Retrieve form data
     artist_id = request.form.get('artist_id')
     venue_id = request.form.get('venue_id')
-    start_time = request.form.get('start_time')
+    start_time = request.form.get('start_time')+':00.00Z'
 
     # Add data to database
     new_show = Show(artist_id=artist_id, venue_id=venue_id, start_time=start_time)
